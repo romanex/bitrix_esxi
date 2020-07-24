@@ -1,0 +1,14 @@
+[Unit]
+Description=Service killing free space
+
+[Service]
+Type=simple
+PIDFile=/var/run/spacekill.pid
+WorkingDirectory=/root
+User=root
+Group=root
+ExecStart=/opt/spacekill.sh
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

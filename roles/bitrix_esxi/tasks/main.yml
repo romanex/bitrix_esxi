@@ -1,0 +1,92 @@
+---
+# tasks file for bitrix_esxi
+
+- name: install packadges
+  yum:
+    state: installed
+    name:
+     - mc
+     - ncdu
+     - htop
+     - wget
+     - nano
+     - postfix
+     - curl-devel
+     - iotop
+     - git
+
+- name: Copy mail settings to remote dir
+  copy:
+   src: ".msmtprc"
+   dest: "{{ mail_setfolder }}"
+   owner: bitrix
+   group: bitrix
+   mode: '0600'
+   backup: yes
+  notify: Restart postfix
+
+- name: Copy spacekill script to remote dir
+  copy:
+   src: spacekill.sh
+   dest: "{{ script_folder }}"
+   owner: root
+   group: root
+   mode: '0777'
+   backup: yes
+
+- name: Copy script to remote
+  copy:
+   src: spacekill.service
+   dest: "{{ service_folder }}"
+   owner: root
+   group: root
+   mode: '0644'
+   backup: yes
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version == '7'
+
+
+- name: Copy script to remote Centos 6
+  copy:
+   src: spacekill
+   dest: "{{ service_folder_v6 }}"
+   owner: root
+   group: root
+   mode: '0744'
+   backup: yes
+  when: ansible_distribution == "CentOS" and ansible_distribution_major_version == '6'
+
+- name: Del old confs
+  lineinfile:
+   path: /etc/crontab
+   regexp: '/root/freespace'
+   state: absent
+
+- name: check service status
+  shell: service spacekill status
+  register: result
+  ignore_errors: yes
+
+- name: showing report
+  debug:
+   var: result
+
+- name: Check that the pdo file exists
+  stat:
+    path: /etc/php.d/20-pdo.ini.disabled
+  register: stat_result_pdo
+
+- name: Create the file, if it doesnt exist already
+  command: mv -f /etc/php.d//20-pdo.ini.disabled /etc/php.d//20-pdo.ini
+  when: stat_result_pdo.stat.exists
+  notify: Restart httpd
+
+- name: Check that the file pdo_mysql exists
+  stat:
+   path: /etc/php.d/30-pdo_mysql.ini.disabled
+  register: stat_result_pdo_mysql
+
+- name: Create the file, if it doesnt exist already
+  command: mv -f /etc/php.d/30-pdo_mysql.ini.disabled /etc/php.d/30-pdo_mysql.ini
+  when: stat_result_pdo_mysql.stat.exists
+  notify: Restart httpd
+

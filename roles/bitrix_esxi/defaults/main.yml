@@ -1,0 +1,7 @@
+---
+# defaults file for bitrix_esxi
+
+script_folder: /opt/
+service_folder: /etc/systemd/system/
+service_folder_v6: /etc/rc.d/init.d/
+mail_setfolder: /home/bitrix/

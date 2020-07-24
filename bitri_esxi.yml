@@ -1,0 +1,8 @@
+---
+- name: Script for configure bitrix_esxi hosts
+  hosts: all
+  become: yes
+
+  roles:
+
+  - { role: bitrix_esxi }

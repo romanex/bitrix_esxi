@@ -1,0 +1,63 @@
+#!/bin/bash
+
+# chkconfig: 2345 20 80
+
+# description: checking load
+
+# Source function library.
+
+. /etc/init.d/functions
+
+case "$1" in
+
+start)
+
+echo "$(date) service spacekill started" >> /var/log/spacekill
+
+/opt/spacekill.sh &
+
+echo $!>/var/run/spacekill.pid
+
+;;
+
+stop)
+
+echo "$(date) service spacekill stopped" >> /var/log/spacekill
+
+kill $(cat /var/run/checker.pid)
+
+rm /var/run/spacekill.pid
+
+;;
+
+restart)
+
+$0 stop
+
+$0 start
+
+;;
+
+status)
+
+if [ -e /var/run/spacekill.pid ]; then
+
+echo checker is running, pid=$(cat /var/run/spacekill.pid)
+
+else
+
+echo spacekill is NOT running
+
+exit 1
+
+fi
+
+;;
+
+*)
+
+echo "Usage: $0 {start|stop|status|restart}"
+
+esac
+
+exit 0
