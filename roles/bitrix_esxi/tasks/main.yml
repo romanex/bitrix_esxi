@@ -14,6 +14,7 @@
      - curl-devel
      - iotop
      - git
+     - chrony
 
 - name: Copy mail settings to remote dir
   copy:
@@ -24,6 +25,12 @@
    mode: '0600'
    backup: yes
   notify: Restart postfix
+
+- name: Add timezone and sync
+  shell: timedatectl set-timezone Europe/Kiev
+  register: result
+  ignore_errors: yes
+  notify: Restart chrony
 
 - name: Copy spacekill script to remote dir
   copy:
