@@ -1,6 +1,6 @@
 ---
 - name: Script for configure bitrix_esxi hosts
-  hosts: all
+  hosts: 192.168.88.210
   become: yes
 
   roles:

@@ -1,31 +1,23 @@
 #!/bin/bash
-while true 
-do
-
-freespace=1048576
+freespace=1024000
+error=2000
 date=`date +%y%m%d%H%M%S`
-#
- disk=$(df -P | awk '$NF == "/" { print $1 }')
- aval=$(df -P | awk '$NF == "/" { if($5 == "/") print $3; else print $4 }')
- used=$(df -P | awk '$NF == "/" { if($5 == "/") print $2; else print $3 }')
- total=$(df -P | awk '$NF == "/" { print $2 }')
- filesize=$(($total-$used-$freespace))
-
-
- if (( $aval >= 921600 && $aval <= 1126400 ))
-  then
-   echo All is ok
-  elif [ $aval -lt $freespace ]
-then
-       tmpfile=$(ls -t | grep temp | head -n2) && rm -f $tmpfile
-       disk=$(df -P | awk '$NF == "/" { print $1 }')
-       aval=$(df -P | awk '$NF == "/" { if($5 == "/") print $3; else print $4 }')
-       used=$(df -P | awk '$NF == "/" { if($5 == "/") print $2; else print $3 }')
-       total=$(df -P|awk 'NR == 2 {print $2}')
-       filesize=$(($total-$used-$freespace))
-   else
-    dd if=/dev/zero of=/root/temp$date bs=1024 count=$filesize
+disk=$(cat /proc/mounts |grep " / "|awk 'NR == 1 {print $1}')
+aval=$(df -P| grep $disk|awk 'NR == 1 {print $4}')
+used=$(df -P| grep $disk|awk 'NR == 1 {print $3}')
+total=$(df -P|grep $disk|awk 'NR == 1 {print $2}')
+filesize=$(($total-$used-$freespace))
+inaccuracy=$(($aval+$error))
+if [ $inaccuracy -lt $freespace ]
+then rm -f /root/temp*
+disk=$(cat /proc/mounts |grep " / "|awk 'NR == 1 {print $1}')
+aval=$(df -P| grep $disk|awk 'NR == 1 {print $4}')
+used=$(df -P| grep $disk|awk 'NR == 1 {print $3}')
+total=$(df -P|grep $disk|awk 'NR == 1 {print $2}')
+total2=$(($aval+$used))
+filesize=$(($total-$used-$freespace))
+inaccuracy=$(($aval+$error))
 fi
-
-sleep 10
-done
+if [ $aval -gt $freespace ]
+then dd if=/dev/zero of=/root/temp$date bs=1024 count=$filesize
+fi

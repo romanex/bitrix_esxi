@@ -10,61 +10,76 @@
      - htop
      - wget
      - nano
-     - postfix
      - curl-devel
      - iotop
      - git
 
-- name: Copy mail settings to remote dir
-  copy:
-   src: ".msmtprc"
-   dest: "{{ mail_setfolder }}"
-   owner: bitrix
-   group: bitrix
-   mode: '0600'
-   backup: yes
-  notify: Restart postfix
+#- name: Copy mail settings to remote dir
+#  copy:
+#   src: ".msmtprc"
+#   dest: "{{ mail_setfolder }}"
+#   owner: bitrix
+#   group: bitrix
+#   mode: '0600'
+#   backup: yes
+#  notify: Restart postfix
 
-- name: Copy spacekill script to remote dir
+#- name: Copy spacekill script to remote dir
+#  copy:
+#   src: spacekill.sh
+#   dest: "{{ script_folder }}"
+#   owner: root
+#   group: root
+#   mode: '0777'
+#   backup: yes
+
+#- name: Copy script to remote
+#  copy:
+#   src: spacekill.service
+#   dest: "{{ service_folder }}"
+#   owner: root
+#   group: root
+#   mode: '0644'
+#   backup: yes
+#  when: ansible_distribution == "CentOS" and ansible_distribution_major_version == '7'
+
+- name: Copy script bitrixenv to remote
   copy:
-   src: spacekill.sh
+   src: bitrixenv.sh
    dest: "{{ script_folder }}"
    owner: root
    group: root
-   mode: '0777'
-   backup: yes
-
-- name: Copy script to remote
-  copy:
-   src: spacekill.service
-   dest: "{{ service_folder }}"
-   owner: root
-   group: root
-   mode: '0644'
+   mode: '077'
    backup: yes
   when: ansible_distribution == "CentOS" and ansible_distribution_major_version == '7'
 
+- name: Add bitrixenv to cronjob
+  cron: special_time="hourly"
+        name="Backup bitrixenv"
+        cron_file="bitrixenv_backup"
+        user="root"
+        job="/opt/bitrixenv.sh"
 
-- name: Copy script to remote Centos 6
-  copy:
-   src: spacekill
-   dest: "{{ service_folder_v6 }}"
-   owner: root
-   group: root
-   mode: '0744'
-   backup: yes
-  when: ansible_distribution == "CentOS" and ansible_distribution_major_version == '6'
+#- name: Copy script to remote Centos 6
+#  copy:
+#   src: spacekill
+#   dest: "{{ service_folder_v6 }}"
+#   owner: root
+#   group: root
+#   mode: '0744'
+#   backup: yes
+#  when: ansible_distribution == "CentOS" and ansible_distribution_major_version == '6'
 
-- name: Del old confs
-  lineinfile:
-   path: /etc/crontab
-   regexp: '/root/freespace'
-   state: absent
+#- name: Del old confs
+#  lineinfile:
+#   path: /etc/crontab
+#   regexp: '/root/freespace'
+#   state: absent
 
-- name: check service status
-  shell: service spacekill status
-  register: result
-  ignore_errors: yes
+#- name: check service status
+#  shell: service spacekill status
+#  register: result
+#  ignore_errors: yes
 
 - name: showing report
   debug:
@@ -75,7 +90,7 @@
     path: /etc/php.d/20-pdo.ini.disabled
   register: stat_result_pdo
 
-- name: Create the file, if it doesnt exist already
+- name: Create pdo file, if it doesnt exist already
   command: mv -f /etc/php.d//20-pdo.ini.disabled /etc/php.d//20-pdo.ini
   when: stat_result_pdo.stat.exists
   notify: Restart httpd
@@ -90,3 +105,12 @@
   when: stat_result_pdo_mysql.stat.exists
   notify: Restart httpd
 
+- name: Check that the file xdebug exists
+  stat:
+   path: /etc/php.d/15-xdebug.ini.disabled
+  register: stat_result_xdebug
+
+- name: Create xdebug file, if it doesnt exist already
+  command: mv -f /etc/php.d/15-xdebug.ini.disabled /etc/php.d/15-xdebug.ini
+  when: stat_result_xdebug.stat.exists
+  notify: Restart httpd
